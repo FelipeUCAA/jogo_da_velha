@@ -44,7 +44,7 @@
         }
         /* Estilos da linha de vitória */
         #winningLine {
-            background-color: #ef4444; /* bg-red-500 */
+            background-color: #000000; /* bg-red-500 */
             position: absolute;
             z-index: 10;
             transition: all 0.3s ease-in-out;
@@ -69,6 +69,33 @@
             height: 8px;
             transform: translate(-50%, -50%) rotate(-45deg);
         }
+
+        /* Estilos específicos para o chat */
+        #chatMessages {
+            height: 200px; /* Altura fixa para a área de mensagens */
+            overflow-y: auto; /* Adiciona scroll se as mensagens excederem a altura */
+            background-color: #f8fafc; /* bg-gray-50 */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e2e8f0; /* border-gray-200 */
+        }
+        .chat-message-container {
+            margin-bottom: 0.5rem;
+            word-wrap: break-word; /* Quebra de linha para mensagens longas */
+        }
+        .chat-sender {
+            font-weight: bold;
+            color: #4a5568; /* text-gray-700 */
+        }
+        .chat-text {
+            color: #000000; /* text-gray-800 */
+        }
+        .chat-timestamp {
+            font-size: 0.75rem;
+            color: #718096; /* text-gray-500 */
+            margin-left: 0.5rem;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center min-h-screen p-4">
@@ -85,7 +112,7 @@
     </div>
 
     <!-- Container Principal do Aplicativo -->
-    <div id="mainAppContainer" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg text-center transform transition-all duration-300 scale-95 opacity-0 hidden">
+    <div id="mainAppContainer" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg md:max-w-4xl text-center transform transition-all duration-300 scale-95 opacity-0 hidden">
         <h1 class="text-5xl font-extrabold mb-6 text-gray-900 leading-tight">Jogo da Velha Online</h1>
         <h2 class="text-lg mb-4 text-gray-600">Para o meu amor ❤️</h2>
         <p class="text-sm text-gray-500 mb-4">Seu ID de Usuário: <span id="currentUserId" class="font-mono text-xs text-gray-700 bg-gray-100 p-1 rounded-md"></span></p>
@@ -109,6 +136,9 @@
                     </button>
                 </div>
             </div>
+                <footer class="mt-8 text-gray-400 text-sm">
+                    Feito com ❤️ por FelipeUCAA &copy; 2025
+                </footer>
             <p id="setupMessage" class="text-red-500 text-md"></p>
         </div>
 
@@ -132,28 +162,49 @@
             <div id="gameStatus" class="text-2xl font-semibold mb-6 text-gray-700">
                 É a vez de...
             </div>
-            <div id="gameBoard" class="board mx-auto bg-gray-200 rounded-lg" style="width:316px; height:316px;">
-                <!-- Células do jogo são populadas via JS -->
-                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="0"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="1"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="2"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="3"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="4"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="5"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="6"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="7"></div>
-                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="8"></div>
-                <div id="winningLine" class="absolute bg-red-500 rounded-full hidden"></div>
+            
+            <!-- Novo contêiner flex para o tabuleiro e o chat -->
+            <div class="flex flex-col md:flex-row items-center md:items-start justify-center gap-8">
+                <div id="gameBoard" class="board mx-auto bg-gray-200 rounded-lg flex-shrink-0" style="width:316px; height:316px;">
+                    <!-- Células do jogo são populadas via JS -->
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="0"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="1"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="2"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="3"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="4"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="5"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="6"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="7"></div>
+                    <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="8"></div>
+                    <div id="winningLine" class="absolute bg-red-500 rounded-full hidden"></div>
+                </div>
+
+                <!-- Seção do Chat -->
+                <div id="chatSection" class="w-full md:w-80 p-4 bg-gray-100 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Chat do Jogo</h3>
+                    <div id="chatMessages" class="text-left text-sm mb-4">
+                        <!-- Mensagens do chat serão inseridas aqui -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chatInput" placeholder="Digite sua mensagem..." class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base shadow-sm">
+                        <button id="sendChatMessageButton" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
+                            Enviar
+                        </button>
+                    </div>
+                </div>
             </div>
-            <button id="resetButton" class="mt-8 px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
-                Reiniciar Jogo
-            </button>
-            <button id="leaveGameButton" class="mt-4 px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-md hover:bg-gray-600 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
-                Sair do Jogo
-            </button>
-            <footer class="mt-8 text-gray-400 text-sm">
-            Feito com ❤️ por FelipeUCAA &copy; 2025
-            </footer>
+            
+            <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                <button id="resetButton" class="px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
+                    Reiniciar Jogo
+                </button>
+                <button id="leaveGameButton" class="px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-md hover:bg-gray-600 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
+                    Sair do Jogo
+                </button>
+                <footer class="mt-8 text-gray-400 text-sm">
+                Feito com ❤️ por FelipeUCAA &copy; 2025
+                </footer>
+            </div>
         </div>
         <!-- Mensagem de erro personalizada (substitui alert/confirm) -->
         <div id="customAlert" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -168,14 +219,16 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, orderBy, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Importar getDocs explicitamente
 
         // Variáveis globais para Firebase e jogo
         let app, db, auth;
         let userId = 'anonymous'; // ID do usuário local
         let gameId = null; // ID do jogo atual
         let playerRole = null; // 'X' ou 'O'
-        let gameDataUnsubscribe = null; // Função para desinscrever do listener do Firestore
+        let gameDataUnsubscribe = null; // Função para desinscrever do listener do Firestore para dados do jogo
+        let chatMessagesUnsubscribe = null; // Função para desinscrever do listener do Firestore para o chat
         let localPlayerName = ''; // Nome que o jogador escolheu
 
         // Elementos do DOM
@@ -202,6 +255,12 @@
         const leaveGameButton = document.getElementById('leaveGameButton');
         const cells = Array.from(document.querySelectorAll('.cell'));
         const winningLine = document.getElementById('winningLine');
+
+        // Elementos do Chat
+        const chatSection = document.getElementById('chatSection');
+        const chatMessagesDiv = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendChatMessageButton = document.getElementById('sendChatMessageButton');
 
         const customAlert = document.getElementById('customAlert');
         const alertMessage = document.getElementById('alertMessage');
@@ -381,6 +440,12 @@
         async function cancelGame() {
             if (gameId && playerRole === 'X') { // Apenas o criador pode cancelar
                 try {
+                    // Também tenta deletar a subcoleção de chat, embora não seja estritamente necessário para um jogo "cancelado"
+                    const chatRef = collection(db, `artifacts/${appId}/public/data/games/${gameId}/chatMessages`);
+                    const chatSnapshot = await getDocs(chatRef);
+                    const deletePromises = chatSnapshot.docs.map(d => deleteDoc(doc(db, chatRef.path, d.id)));
+                    await Promise.all(deletePromises);
+
                     await deleteDoc(doc(db, `artifacts/${appId}/public/data/games`, gameId));
                     showAlert('Jogo cancelado.');
                 } catch (error) {
@@ -396,6 +461,9 @@
             if (gameDataUnsubscribe) {
                 gameDataUnsubscribe();
             }
+            if (chatMessagesUnsubscribe) { // Desinscreve do listener do chat
+                chatMessagesUnsubscribe();
+            }
             gameId = null;
             playerRole = null;
             board = ['', '', '', '', '', '', '', '', ''];
@@ -408,6 +476,7 @@
             gameIdInput.value = '';
             playerNameInput.value = localPlayerName; // Mantém o nickname
             renderWinningLine(null);
+            chatMessagesDiv.innerHTML = ''; // Limpa as mensagens do chat
             showScreen('gameSetupScreen');
         }
 
@@ -434,11 +503,13 @@
                         updateBoardUI();
                         updateGameStatusMessage(`É a vez de ${currentPlayer === 'X' ? playerXName : playerOName}`);
                         renderWinningLine(null); // Remove linha de vitória se o jogo estiver ativo
+                        listenToChatMessages(gameDocId); // Inicia o listener do chat quando o jogo está ativo
                     } else if (data.status === 'finished') {
                         showScreen('gameScreen');
                         gameActive = false;
                         updateBoardUI();
-                        updateGameStatusMessage(`${currentPlayer === 'X' ? playerXName : playerOName} Venceu! 🎉`);
+                        const winner = currentPlayer === 'X' ? playerOName : playerXName;
+                        updateGameStatusMessage(`${winner} Venceu! 🎉`);
                         renderWinningLine(data.winningCombination);
                     } else if (data.status === 'draw') {
                         showScreen('gameScreen');
@@ -529,6 +600,12 @@
 
             try {
                 const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+                // Limpa as mensagens do chat ao reiniciar o jogo
+                const chatRef = collection(db, `artifacts/${appId}/public/data/games/${gameId}/chatMessages`);
+                const chatSnapshot = await getDocs(chatRef);
+                const deletePromises = chatSnapshot.docs.map(d => deleteDoc(doc(db, chatRef.path, d.id)));
+                await Promise.all(deletePromises);
+
                 await updateDoc(gameRef, {
                     board: ['', '', '', '', '', '', '', '', ''],
                     currentPlayer: 'X', // Sempre começa com X
@@ -540,6 +617,70 @@
                 showAlert("Erro ao reiniciar jogo. Tente novamente.");
             }
         }
+
+        // --- Funções do Chat ---
+
+        // Envia uma mensagem para o Firestore
+        async function sendChatMessage() {
+            const messageText = chatInput.value.trim();
+            if (messageText === '' || !gameId) {
+                return;
+            }
+
+            try {
+                const chatRef = collection(db, `artifacts/${appId}/public/data/games/${gameId}/chatMessages`);
+                await addDoc(chatRef, {
+                    senderName: localPlayerName,
+                    senderId: userId,
+                    message: messageText,
+                    timestamp: serverTimestamp() // Usa o timestamp do servidor para consistência
+                });
+                chatInput.value = ''; // Limpa o input
+            } catch (error) {
+                console.error("Erro ao enviar mensagem do chat:", error);
+                showAlert("Erro ao enviar mensagem do chat.");
+            }
+        }
+
+        // Renderiza uma mensagem individual no chat
+        function renderChatMessage(messageData) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message-container');
+
+            const timestamp = messageData.timestamp ? new Date(messageData.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'agora';
+
+            messageElement.innerHTML = `
+                <span class="chat-sender">${messageData.senderName}:</span>
+                <span class="chat-text">${messageData.message}</span>
+                <span class="chat-timestamp">${timestamp}</span>
+            `;
+            chatMessagesDiv.appendChild(messageElement);
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Rola para a mensagem mais recente
+        }
+
+        // Inicia o listener de mensagens do chat no Firestore
+        function listenToChatMessages(gameDocId) {
+            if (chatMessagesUnsubscribe) { // Garante que não há listeners duplicados
+                chatMessagesUnsubscribe();
+            }
+
+            const chatRef = collection(db, `artifacts/${appId}/public/data/games/${gameDocId}/chatMessages`);
+            const q = query(chatRef, orderBy('timestamp')); // Ordena as mensagens por timestamp
+
+            chatMessagesDiv.innerHTML = ''; // Limpa o chat ao iniciar um novo listener
+
+            chatMessagesUnsubscribe = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        renderChatMessage(change.doc.data());
+                    }
+                });
+            }, (error) => {
+                console.error("Erro ao ouvir mensagens do chat:", error);
+                showAlert("Erro ao carregar mensagens do chat.");
+            });
+        }
+
 
         // --- Inicialização da Aplicação ---
 
@@ -583,24 +724,29 @@
                     } catch (error) {
                         console.error("Erro na autenticação:", error);
                         // Mensagem mais específica para o erro de configuração
-                        if (error.code === 'auth/configuration-not-found' || error.code === 'auth/network-request-failed') { // Adicionado network-request-failed
+                        if (error.code === 'auth/configuration-not-found' || error.code === 'auth/network-request-failed' || error.code === 'permission-denied') { // Adicionado network-request-failed e permission-denied
                             loadingMessageSpan.innerHTML = `
-                                <span class="text-red-400">Erro: Autenticação Firebase não configurada ou problema de rede!</span><br>
-                                <span class="text-yellow-300 text-lg mt-2">Para habilitar o multiplayer, por favor, vá ao console do Firebase e:</span><br>
+                                <span class="text-red-400">Erro: Configuração do Firebase incompleta ou problema de permissões!</span><br>
+                                <span class="text-yellow-300 text-lg mt-2">Para habilitar o multiplayer e o chat, por favor, vá ao console do Firebase e:</span><br>
                                 <ul class="list-disc list-inside text-left text-lg mt-2">
                                     <li>1. Habilite o método de login **Anônimo** em "Authentication".</li>
                                     <li>2. Crie um **Firestore Database** em "Firestore Database".</li>
-                                    <li>3. Defina as regras de segurança para permitir leitura e escrita na coleção <code class="bg-gray-700 p-1 rounded">/artifacts/{appId}/public/data/games</code> em "Firestore Database" -> "Rules". Use as **regras do Firestore** abaixo:</li>
+                                    <li>3. Defina as regras de segurança para permitir leitura e escrita na coleção <code class="bg-gray-700 p-1 rounded">/artifacts/{appId}/public/data/games</code> e na subcoleção de chat <code class="bg-gray-700 p-1 rounded">/artifacts/{appId}/public/data/games/{gameId}/chatMessages</code> em "Firestore Database" -> "Rules". Use as **regras do Firestore** abaixo:</li>
                                 </ul>
                                 <pre class="bg-gray-800 text-green-300 p-4 rounded-md text-left mt-4 overflow-x-auto text-sm"><code>rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite leitura e escrita para qualquer usuário autenticado (incluindo anônimo)
+    // Permite leitura e escrita para documentos de jogo
     match /artifacts/{appId}/public/data/games/{gameId} {
+      allow read, write: if request.auth != null;
+    }
+    // Permite leitura e escrita para mensagens de chat dentro de cada jogo
+    match /artifacts/{appId}/public/data/games/{gameId}/chatMessages/{messageId} {
       allow read, write: if request.auth != null;
     }
   }
 }</code></pre>
+                                <p class="text-yellow-300 text-lg mt-4">**Não se esqueça de clicar em "Publicar" as regras!**</p>
                             `;
                         } else {
                             loadingMessageSpan.innerHTML = `<span class="text-red-400">Erro ao carregar o aplicativo: ${error.message}. Por favor, tente novamente.</span>`;
@@ -622,6 +768,14 @@ service cloud.firestore {
         leaveGameButton.addEventListener('click', leaveCurrentGame);
 
         cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+
+        // Event Listeners para o Chat
+        sendChatMessageButton.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        });
 
         // Copiar código do jogo para o clipboard
         copyGameCodeButton.addEventListener('click', () => {
