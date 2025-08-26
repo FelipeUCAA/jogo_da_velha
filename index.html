@@ -3,10 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo da Velha</title>
+    <title>Jogo da Velha Multiplayer</title>
     <link rel="icon" type="image/png" href="image/jogodavelhaicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Estilos globais e fontes */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Estilos do tabuleiro */
         .board {
             position: relative;
             display: grid;
@@ -14,6 +22,7 @@
             grid-template-rows: repeat(3, 100px);
             gap: 8px;
         }
+        /* Estilos das células do tabuleiro */
         .cell {
             width: 100px;
             height: 100px;
@@ -24,20 +33,24 @@
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra suave */
         }
         .cell:hover:not(.disabled) {
-            background-color: #e2e8f0;
+            background-color: #e2e8f0; /* bg-gray-200 */
         }
         .cell.disabled {
             cursor: not-allowed;
         }
+        /* Estilos da linha de vitória */
         #winningLine {
-            background-color: #000000;
+            background-color: #ef4444; /* bg-red-500 */
             position: absolute;
             z-index: 10;
             transition: all 0.3s ease-in-out;
             border-radius: 9999px;
         }
+        /* Posições da linha de vitória */
         #winningLine.win-012 { top: 50px; left: 0; width: 316px; height: 8px; }
         #winningLine.win-345 { top: 158px; left: 0; width: 316px; height: 8px; }
         #winningLine.win-678 { top: 266px; left: 0; width: 316px; height: 8px; }
@@ -58,124 +71,566 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 font-sans">
-    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
-        <h1 class="text-4xl font-extrabold mb-6 text-gray-800">Jogo da Velha</h1>
-        <h1> Para o meu amor ❤️</h1>
-        <div id="gameStatus" class="text-2xl font-semibold mb-6 text-gray-700">
-            É a vez do Jogador X
+<body class="bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Tela de Carregamento/Autenticação -->
+    <div id="loadingScreen" class="absolute inset-0 bg-indigo-700 bg-opacity-90 flex items-center justify-center z-50">
+        <div class="text-white text-3xl font-bold flex flex-col items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="mt-4" id="loadingMessage">Carregando...</span>
         </div>
-        <div id="gameBoard" class="board mx-auto bg-gray-200 rounded-lg" style="width:316px; height:316px;">
-            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="0"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="1"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="2"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="3"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="4"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="5"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="6"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="7"></div>
-            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="8"></div>
-            <div id="winningLine" class="absolute bg-red-500 rounded-full hidden" style="transition: all 0.3s ease-in-out;"></div>
-        </div>
-        <button id="resetButton" class="mt-8 px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
-            Reiniciar Jogo
-        </button>
     </div>
-    <script>
-        const gameBoard = document.getElementById('gameBoard');
+
+    <!-- Container Principal do Aplicativo -->
+    <div id="mainAppContainer" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg text-center transform transition-all duration-300 scale-95 opacity-0 hidden">
+        <h1 class="text-5xl font-extrabold mb-6 text-gray-900 leading-tight">Jogo da Velha Online</h1>
+        <h2 class="text-lg mb-4 text-gray-600">Para o meu amor ❤️</h2>
+        <p class="text-sm text-gray-500 mb-4">Seu ID de Usuário: <span id="currentUserId" class="font-mono text-xs text-gray-700 bg-gray-100 p-1 rounded-md"></span></p>
+
+        <!-- Tela de Configuração e Criação/Entrada no Jogo -->
+        <div id="gameSetupScreen" class="transition-opacity duration-300 ease-in-out">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800">Crie ou Junte-se a um Jogo</h3>
+            <div class="mb-4">
+                <label for="playerNameInput" class="block text-xl font-medium text-gray-700 mb-2">Seu Nickname:</label>
+                <input type="text" id="playerNameInput" placeholder="Seu nome" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg shadow-sm">
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <button id="createGameButton" class="flex-1 px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 text-xl">
+                    Criar Novo Jogo
+                </button>
+                <div class="flex-1">
+                    <input type="text" id="gameIdInput" placeholder="Código do Jogo" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg mb-2 shadow-sm">
+                    <button id="joinGameButton" class="w-full px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 text-xl">
+                        Entrar em um Jogo
+                    </button>
+                </div>
+            </div>
+            <p id="setupMessage" class="text-red-500 text-md"></p>
+        </div>
+
+        <!-- Tela de Espera de Jogador -->
+        <div id="waitingScreen" class="transition-opacity duration-300 ease-in-out hidden">
+            <h3 class="text-3xl font-bold mb-4 text-gray-800">Esperando outro jogador...</h3>
+            <p class="text-xl text-gray-700 mb-4">Compartilhe este código do jogo:</p>
+            <div class="flex items-center justify-center mb-6">
+                <span id="gameCodeDisplay" class="bg-gray-200 text-gray-800 text-3xl font-mono p-4 rounded-lg mr-2 select-all shadow-inner"></span>
+                <button id="copyGameCodeButton" class="p-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1.5M9 3l2 2m0 0l2-2m-2 2v5m-3 0h6"></path></svg>
+                </button>
+            </div>
+            <button id="cancelGameButton" class="px-6 py-3 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75">
+                Cancelar Jogo
+            </button>
+        </div>
+
+        <!-- Container do Jogo da Velha (inicialmente oculto) -->
+        <div id="gameScreen" class="transition-opacity duration-300 ease-in-out hidden">
+            <div id="gameStatus" class="text-2xl font-semibold mb-6 text-gray-700">
+                É a vez de...
+            </div>
+            <div id="gameBoard" class="board mx-auto bg-gray-200 rounded-lg" style="width:316px; height:316px;">
+                <!-- Células do jogo são populadas via JS -->
+                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="0"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="1"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="2"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="3"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="4"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="5"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="6"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="7"></div>
+                <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="8"></div>
+                <div id="winningLine" class="absolute bg-red-500 rounded-full hidden"></div>
+            </div>
+            <button id="resetButton" class="mt-8 px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
+                Reiniciar Jogo
+            </button>
+            <button id="leaveGameButton" class="mt-4 px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-md hover:bg-gray-600 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
+                Sair do Jogo
+            </button>
+        </div>
+        <!-- Mensagem de erro personalizada (substitui alert/confirm) -->
+        <div id="customAlert" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+                <p id="alertMessage" class="text-xl font-semibold text-gray-800 mb-4"></p>
+                <button id="alertCloseButton" class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variáveis globais para Firebase e jogo
+        let app, db, auth;
+        let userId = 'anonymous'; // ID do usuário local
+        let gameId = null; // ID do jogo atual
+        let playerRole = null; // 'X' ou 'O'
+        let gameDataUnsubscribe = null; // Função para desinscrever do listener do Firestore
+        let localPlayerName = ''; // Nome que o jogador escolheu
+
+        // Elementos do DOM
+        const loadingScreen = document.getElementById('loadingScreen');
+        const mainAppContainer = document.getElementById('mainAppContainer');
+        const currentUserIdSpan = document.getElementById('currentUserId');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const createGameButton = document.getElementById('createGameButton');
+        const joinGameButton = document.getElementById('joinGameButton');
+        const gameIdInput = document.getElementById('gameIdInput');
+        const setupMessage = document.getElementById('setupMessage');
+        const loadingMessageSpan = document.getElementById('loadingMessage'); // Span para a mensagem de carregamento
+
+        const gameSetupScreen = document.getElementById('gameSetupScreen');
+        const waitingScreen = document.getElementById('waitingScreen');
+        const gameCodeDisplay = document.getElementById('gameCodeDisplay');
+        const copyGameCodeButton = document.getElementById('copyGameCodeButton');
+        const cancelGameButton = document.getElementById('cancelGameButton');
+
+        const gameScreen = document.getElementById('gameScreen');
         const gameStatus = document.getElementById('gameStatus');
+        const gameBoard = document.getElementById('gameBoard');
         const resetButton = document.getElementById('resetButton');
-        const cells = document.querySelectorAll('.cell');
+        const leaveGameButton = document.getElementById('leaveGameButton');
+        const cells = Array.from(document.querySelectorAll('.cell'));
         const winningLine = document.getElementById('winningLine');
+
+        const customAlert = document.getElementById('customAlert');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertCloseButton = document.getElementById('alertCloseButton');
+
+        // Variáveis de estado do jogo
         let board = ['', '', '', '', '', '', '', '', ''];
         let currentPlayer = 'X';
-        let gameActive = true;
-        const winningMessage = () => `Jogador ${currentPlayer} Venceu!`;
-        const drawMessage = () => `O jogo terminou em Empate!`;
-        const currentPlayerTurn = () => `É a vez do Jogador ${currentPlayer}`;
+        let gameActive = false;
+        let playerXName = 'Jogador X';
+        let playerOName = 'Jogador O';
+        let playerXId = null;
+        let playerOId = null;
+
+        // Condições de vitória
         const winningConditions = [
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],
-            [0, 4, 8],
-            [2, 4, 6]
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
         ];
-        function initializeGame() {
-            gameStatus.innerHTML = currentPlayerTurn();
-            cells.forEach(cell => cell.addEventListener('click', handleCellClick));
-            resetButton.addEventListener('click', handleResetGame);
-            winningLine.classList.add('hidden');
+
+        // --- Funções Auxiliares ---
+
+        // Função para gerar um ID de jogo simples
+        function generateGameId() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
-        function handleCellClick(clickedCellEvent) {
-            const clickedCell = clickedCellEvent.target;
-            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
-            if (board[clickedCellIndex] !== '' || !gameActive) {
-                return;
-            }
-            handlePlayerChange(clickedCell, clickedCellIndex);
-            handleResultValidation();
+
+        // Função para exibir mensagem de alerta personalizada
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            customAlert.classList.remove('hidden');
         }
-        function handlePlayerChange(clickedCell, clickedCellIndex) {
-            board[clickedCellIndex] = currentPlayer;
-            clickedCell.innerHTML = currentPlayer;
-            clickedCell.classList.remove('text-blue-600', 'text-red-600');
-            clickedCell.classList.add(currentPlayer === 'X' ? 'text-blue-600' : 'text-red-600');
-            clickedCell.classList.add('disabled');
+
+        // Função para fechar mensagem de alerta
+        alertCloseButton.addEventListener('click', () => {
+            customAlert.classList.add('hidden');
+        });
+
+        // Função para mostrar telas
+        function showScreen(screenId) {
+            // Esconde todas as telas
+            gameSetupScreen.classList.add('hidden');
+            waitingScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+
+            // Mostra a tela desejada
+            document.getElementById(screenId).classList.remove('hidden');
         }
-        function handleResultValidation() {
-            let roundWon = false;
-            let winningConditionIndex = -1;
-            for (let i = 0; i < winningConditions.length; i++) {
-                const winCondition = winningConditions[i];
-                let a = board[winCondition[0]];
-                let b = board[winCondition[1]];
-                let c = board[winCondition[2]];
-                if (a === '' || b === '' || c === '') {
-                    continue;
+
+        // --- Funções do Jogo ---
+
+        // Atualiza a UI do tabuleiro com base nos dados do Firestore
+        function updateBoardUI() {
+            cells.forEach((cell, index) => {
+                cell.innerHTML = board[index];
+                cell.classList.remove('text-blue-600', 'text-red-600', 'disabled');
+                if (board[index] === 'X') {
+                    cell.classList.add('text-blue-600');
+                } else if (board[index] === 'O') {
+                    cell.classList.add('text-red-600');
                 }
-                if (a === b && b === c) {
-                    roundWon = true;
-                    winningConditionIndex = i;
-                    break;
+                // Desabilita a célula se já estiver preenchida, o jogo não estiver ativo, ou não for o turno do jogador atual
+                if (board[index] !== '' || !gameActive || currentPlayer !== playerRole || (currentPlayer === 'X' && userId !== playerXId) || (currentPlayer === 'O' && userId !== playerOId)) {
+                    cell.classList.add('disabled');
+                } else {
+                    cell.classList.remove('disabled');
                 }
-            }
-            if (roundWon) {
-                gameStatus.innerHTML = winningMessage();
-                gameActive = false;
-                cells.forEach(cell => cell.classList.add('disabled'));
+            });
+        }
+
+
+        // Atualiza a mensagem de status do jogo
+        function updateGameStatusMessage(statusText) {
+            gameStatus.innerHTML = statusText;
+        }
+
+        // Renderiza a linha de vitória
+        function renderWinningLine(combination) {
+            if (combination && combination.length === 3) {
+                winningLine.className = ''; // Limpa classes antigas
+                winningLine.classList.add('absolute', 'rounded-full'); // Classes base
+                winningLine.classList.add(`win-${combination.join('')}`);
                 winningLine.classList.remove('hidden');
-                winningLine.classList.add(`win-${winningConditions[winningConditionIndex].join('')}`);
-                setTimeout(handleResetGame, 5000);
-                return;
+            } else {
+                winningLine.classList.add('hidden');
             }
-            let roundDraw = !board.includes('');
-            if (roundDraw) {
-                gameStatus.innerHTML = drawMessage();
-                gameActive = false;
-                cells.forEach(cell => cell.classList.add('disabled'));
-                return;
-            }
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            gameStatus.innerHTML = currentPlayerTurn();
         }
-        function handleResetGame() {
+
+        // --- Funções de Sincronização com Firestore ---
+
+        // Cria um novo jogo no Firestore
+        async function createGame() {
+            const name = playerNameInput.value.trim();
+            if (!name) {
+                setupMessage.textContent = 'Por favor, digite seu nickname.';
+                return;
+            }
+            localPlayerName = name;
+            setupMessage.textContent = '';
+            showScreen('waitingScreen');
+
+            gameId = generateGameId();
+            gameCodeDisplay.textContent = gameId;
+
+            try {
+                const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+                await setDoc(gameRef, {
+                    board: ['', '', '', '', '', '', '', '', ''],
+                    currentPlayer: 'X',
+                    playerXId: userId,
+                    playerXName: localPlayerName,
+                    playerOId: null,
+                    playerOName: null,
+                    status: 'waiting', // 'waiting', 'active', 'finished', 'draw'
+                    winningCombination: null,
+                    createdAt: new Date()
+                });
+                playerRole = 'X';
+                listenToGameChanges(gameId);
+            } catch (error) {
+                console.error("Erro ao criar jogo:", error);
+                showAlert("Erro ao criar jogo. Tente novamente.");
+                showScreen('gameSetupScreen');
+            }
+        }
+
+        // Entra em um jogo existente no Firestore
+        async function joinGame() {
+            const name = playerNameInput.value.trim();
+            const id = gameIdInput.value.trim().toUpperCase();
+            if (!name) {
+                setupMessage.textContent = 'Por favor, digite seu nickname.';
+                return;
+            }
+            if (!id) {
+                setupMessage.textContent = 'Por favor, digite o código do jogo.';
+                return;
+            }
+            localPlayerName = name;
+            gameId = id;
+            setupMessage.textContent = '';
+            showScreen('waitingScreen'); // Mostra a tela de espera enquanto tenta entrar
+
+            try {
+                const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+                const gameDoc = await getDoc(gameRef);
+
+                if (!gameDoc.exists()) {
+                    showAlert('Jogo não encontrado. Verifique o código.');
+                    showScreen('gameSetupScreen');
+                    return;
+                }
+
+                const data = gameDoc.data();
+                if (data.status !== 'waiting' || data.playerOId !== null) {
+                    showAlert('Este jogo já está em andamento ou cheio.');
+                    showScreen('gameSetupScreen');
+                    return;
+                }
+
+                await updateDoc(gameRef, {
+                    playerOId: userId,
+                    playerOName: localPlayerName,
+                    status: 'active'
+                });
+                playerRole = 'O';
+                listenToGameChanges(gameId);
+            } catch (error) {
+                console.error("Erro ao entrar no jogo:", error);
+                showAlert("Erro ao entrar no jogo. Tente novamente.");
+                showScreen('gameSetupScreen');
+            }
+        }
+
+        // Cancela um jogo criado (se estiver no estado 'waiting')
+        async function cancelGame() {
+            if (gameId && playerRole === 'X') { // Apenas o criador pode cancelar
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/games`, gameId));
+                    showAlert('Jogo cancelado.');
+                } catch (error) {
+                    console.error("Erro ao cancelar jogo:", error);
+                    showAlert("Erro ao cancelar jogo.");
+                }
+            }
+            leaveCurrentGame();
+        }
+
+        // Sai do jogo atual e retorna para a tela de setup
+        function leaveCurrentGame() {
+            if (gameDataUnsubscribe) {
+                gameDataUnsubscribe();
+            }
+            gameId = null;
+            playerRole = null;
             board = ['', '', '', '', '', '', '', '', ''];
             currentPlayer = 'X';
-            gameActive = true;
-            gameStatus.innerHTML = currentPlayerTurn();
-            cells.forEach(cell => {
-                cell.innerHTML = '';
-                cell.classList.remove('text-blue-600', 'text-red-600', 'disabled');
-            });
-            winningLine.classList.add('hidden');
-            winningConditions.forEach(condition => {
-                winningLine.classList.remove(`win-${condition.join('')}`);
+            gameActive = false;
+            playerXName = 'Jogador X';
+            playerOName = 'Jogador O';
+            playerXId = null;
+            playerOId = null;
+            gameIdInput.value = '';
+            playerNameInput.value = localPlayerName; // Mantém o nickname
+            renderWinningLine(null);
+            showScreen('gameSetupScreen');
+        }
+
+        // Listener de mudanças no documento do jogo no Firestore
+        function listenToGameChanges(gameDocId) {
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameDocId);
+            gameDataUnsubscribe = onSnapshot(gameRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    board = data.board;
+                    currentPlayer = data.currentPlayer;
+                    playerXName = data.playerXName || 'Jogador X';
+                    playerOName = data.playerOName || 'Jogador O';
+                    playerXId = data.playerXId;
+                    playerOId = data.playerOId;
+
+                    if (data.status === 'waiting') {
+                        gameCodeDisplay.textContent = gameDocId;
+                        showScreen('waitingScreen');
+                        updateGameStatusMessage(`Esperando o(a) ${playerRole === 'X' ? 'segundo(a) jogador(a)' : 'primeiro(a) jogador(a)'}...`);
+                    } else if (data.status === 'active') {
+                        showScreen('gameScreen');
+                        gameActive = true;
+                        updateBoardUI();
+                        updateGameStatusMessage(`É a vez de ${currentPlayer === 'X' ? playerXName : playerOName}`);
+                        renderWinningLine(null); // Remove linha de vitória se o jogo estiver ativo
+                    } else if (data.status === 'finished') {
+                        showScreen('gameScreen');
+                        gameActive = false;
+                        updateBoardUI();
+                        updateGameStatusMessage(`${currentPlayer === 'X' ? playerXName : playerOName} Venceu! 🎉`);
+                        renderWinningLine(data.winningCombination);
+                    } else if (data.status === 'draw') {
+                        showScreen('gameScreen');
+                        gameActive = false;
+                        updateBoardUI();
+                        updateGameStatusMessage('O jogo terminou em Empate! 🤝');
+                        renderWinningLine(null);
+                    }
+                } else {
+                    // Jogo foi deletado ou não existe mais
+                    showAlert('O jogo atual foi encerrado pelo outro jogador.');
+                    leaveCurrentGame();
+                }
+            }, (error) => {
+                console.error("Erro ao ouvir mudanças no jogo:", error);
+                showAlert("Perda de conexão com o jogo.");
+                leaveCurrentGame();
             });
         }
-        initializeGame();
+
+        // Lida com o clique na célula
+        async function handleCellClick(event) {
+            // Verifica se é o turno do jogador correto e se o jogo está ativo
+            if (!gameActive || currentPlayer !== playerRole || userId !== (currentPlayer === 'X' ? playerXId : playerOId)) {
+                return;
+            }
+
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+
+            // Se a célula estiver vazia, faz a jogada
+            if (board[clickedCellIndex] === '') {
+                // Realiza a jogada localmente (apenas para exibição rápida)
+                board[clickedCellIndex] = currentPlayer;
+                updateBoardUI();
+
+                // Atualiza o Firestore com a nova jogada e troca de turno
+                try {
+                    const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+                    let newBoard = [...board]; // Copia o array
+                    let newCurrentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    let newStatus = 'active';
+                    let winningCombo = null;
+
+                    // Valida resultado após a jogada
+                    let roundWon = false;
+                    for (let i = 0; i < winningConditions.length; i++) {
+                        const winCondition = winningConditions[i];
+                        let a = newBoard[winCondition[0]];
+                        let b = newBoard[winCondition[1]];
+                        let c = newBoard[winCondition[2]];
+                        if (a !== '' && a === b && b === c) {
+                            roundWon = true;
+                            winningCombo = winCondition;
+                            break;
+                        }
+                    }
+
+                    if (roundWon) {
+                        newStatus = 'finished';
+                    } else if (!newBoard.includes('')) {
+                        newStatus = 'draw';
+                    }
+
+                    await updateDoc(gameRef, {
+                        board: newBoard,
+                        currentPlayer: newCurrentPlayer,
+                        status: newStatus,
+                        winningCombination: winningCombo
+                    });
+
+                } catch (error) {
+                    console.error("Erro ao fazer jogada:", error);
+                    showAlert("Erro ao fazer jogada. Tente novamente.");
+                }
+            }
+        }
+
+        // Reinicia o jogo no Firestore
+        async function handleResetGame() {
+            if (!gameId) return;
+
+            // Apenas o Player X ou O pode reiniciar o jogo
+            if (userId !== playerXId && userId !== playerOId) {
+                showAlert("Apenas um dos jogadores pode reiniciar o jogo.");
+                return;
+            }
+
+            try {
+                const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+                await updateDoc(gameRef, {
+                    board: ['', '', '', '', '', '', '', '', ''],
+                    currentPlayer: 'X', // Sempre começa com X
+                    status: 'active',
+                    winningCombination: null
+                });
+            } catch (error) {
+                console.error("Erro ao reiniciar jogo:", error);
+                showAlert("Erro ao reiniciar jogo. Tente novamente.");
+            }
+        }
+
+        // --- Inicialização da Aplicação ---
+
+        // Configuração do Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4CZn0U0Xt_GuVULBKnJJqbCM8MFISt8M",
+            authDomain: "jogo-da-velha-multiplaye-4860f.firebaseapp.com",
+            projectId: "jogo-da-velha-multiplaye-4860f",
+            storageBucket: "jogo-da-velha-multiplaye-4860f.firebasestorage.app",
+            messagingSenderId: "31477858077",
+            appId: "1:31477858077:web:4181652905eb8fea992bf4",
+            measurementId: "G-03QRCSVRP2"
+        };
+
+        try {
+            // Inicializa Firebase
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Listener de estado de autenticação
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    currentUserIdSpan.textContent = userId;
+                    // Esconde tela de carregamento e mostra o app
+                    loadingScreen.classList.add('hidden');
+                    mainAppContainer.classList.remove('hidden');
+                    mainAppContainer.classList.add('scale-100', 'opacity-100');
+                    showScreen('gameSetupScreen'); // Mostra a tela de setup
+                } else {
+                    // Tenta autenticar anonimamente
+                    try {
+                        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Erro na autenticação:", error);
+                        // Mensagem mais específica para o erro de configuração
+                        if (error.code === 'auth/configuration-not-found' || error.code === 'auth/network-request-failed') { // Adicionado network-request-failed
+                            loadingMessageSpan.innerHTML = `
+                                <span class="text-red-400">Erro: Autenticação Firebase não configurada ou problema de rede!</span><br>
+                                <span class="text-yellow-300 text-lg mt-2">Para habilitar o multiplayer, por favor, vá ao console do Firebase e:</span><br>
+                                <ul class="list-disc list-inside text-left text-lg mt-2">
+                                    <li>1. Habilite o método de login **Anônimo** em "Authentication".</li>
+                                    <li>2. Crie um **Firestore Database** em "Firestore Database".</li>
+                                    <li>3. Defina as regras de segurança para permitir leitura e escrita na coleção <code class="bg-gray-700 p-1 rounded">/artifacts/{appId}/public/data/games</code> em "Firestore Database" -> "Rules". Use as **regras do Firestore** abaixo:</li>
+                                </ul>
+                                <pre class="bg-gray-800 text-green-300 p-4 rounded-md text-left mt-4 overflow-x-auto text-sm"><code>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permite leitura e escrita para qualquer usuário autenticado (incluindo anônimo)
+    match /artifacts/{appId}/public/data/games/{gameId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</code></pre>
+                            `;
+                        } else {
+                            loadingMessageSpan.innerHTML = `<span class="text-red-400">Erro ao carregar o aplicativo: ${error.message}. Por favor, tente novamente.</span>`;
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Erro ao inicializar Firebase:", error);
+            loadingMessageSpan.innerHTML = `<span class="text-red-400">Erro ao inicializar Firebase: ${error.message}. Verifique a configuração.</span>`;
+        }
+
+
+        // Adicionar Event Listeners
+        createGameButton.addEventListener('click', createGame);
+        joinGameButton.addEventListener('click', joinGame);
+        cancelGameButton.addEventListener('click', cancelGame);
+        resetButton.addEventListener('click', handleResetGame);
+        leaveGameButton.addEventListener('click', leaveCurrentGame);
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+
+        // Copiar código do jogo para o clipboard
+        copyGameCodeButton.addEventListener('click', () => {
+            const gameCode = gameCodeDisplay.textContent;
+            navigator.clipboard.writeText(gameCode).then(() => {
+                showAlert('Código do jogo copiado!');
+            }).catch(err => {
+                console.error('Falha ao copiar:', err);
+                showAlert('Falha ao copiar o código. Por favor, copie manualmente.');
+            });
+        });
+
     </script>
 </body>
 </html>
