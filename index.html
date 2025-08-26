@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <link rel="icon" type="image/png" href="image/jogodavelhaicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .board {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 8px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .cell:hover:not(.disabled) {
+            background-color: #e2e8f0;
+        }
+        .cell.disabled {
+            cursor: not-allowed;
+        }
+        #winningLine {
+            background-color: #000000;
+            position: absolute;
+            z-index: 10;
+            transition: all 0.3s ease-in-out;
+            border-radius: 9999px;
+        }
+        #winningLine.win-012 { top: 50px; left: 0; width: 316px; height: 8px; }
+        #winningLine.win-345 { top: 158px; left: 0; width: 316px; height: 8px; }
+        #winningLine.win-678 { top: 266px; left: 0; width: 316px; height: 8px; }
+        #winningLine.win-036 { top: 0; left: 50px; height: 316px; width: 8px; }
+        #winningLine.win-147 { top: 0; left: 158px; height: 316px; width: 8px; }
+        #winningLine.win-258 { top: 0; left: 266px; height: 316px; width: 8px; }
+        #winningLine.win-048 {
+            top: 50%; left: 50%;
+            width: 447px;
+            height: 8px;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        #winningLine.win-246 {
+            top: 50%; left: 50%;
+            width: 447px;
+            height: 8px;
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 font-sans">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+        <h1 class="text-4xl font-extrabold mb-6 text-gray-800">Jogo da Velha</h1>
+        <h1> Para o meu amor ❤️</h1>
+        <div id="gameStatus" class="text-2xl font-semibold mb-6 text-gray-700">
+            É a vez do Jogador X
+        </div>
+        <div id="gameBoard" class="board mx-auto bg-gray-200 rounded-lg" style="width:316px; height:316px;">
+            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="0"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="1"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="2"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="3"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="4"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-red-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="5"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="6"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="7"></div>
+            <div class="cell bg-white rounded-md flex items-center justify-center text-blue-600 transition duration-200 ease-in-out shadow-sm border border-gray-300" data-cell-index="8"></div>
+            <div id="winningLine" class="absolute bg-red-500 rounded-full hidden" style="transition: all 0.3s ease-in-out;"></div>
+        </div>
+        <button id="resetButton" class="mt-8 px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
+            Reiniciar Jogo
+        </button>
+    </div>
+    <script>
+        const gameBoard = document.getElementById('gameBoard');
+        const gameStatus = document.getElementById('gameStatus');
+        const resetButton = document.getElementById('resetButton');
+        const cells = document.querySelectorAll('.cell');
+        const winningLine = document.getElementById('winningLine');
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        const winningMessage = () => `Jogador ${currentPlayer} Venceu!`;
+        const drawMessage = () => `O jogo terminou em Empate!`;
+        const currentPlayerTurn = () => `É a vez do Jogador ${currentPlayer}`;
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+        function initializeGame() {
+            gameStatus.innerHTML = currentPlayerTurn();
+            cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+            resetButton.addEventListener('click', handleResetGame);
+            winningLine.classList.add('hidden');
+        }
+        function handleCellClick(clickedCellEvent) {
+            const clickedCell = clickedCellEvent.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+            if (board[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+            handlePlayerChange(clickedCell, clickedCellIndex);
+            handleResultValidation();
+        }
+        function handlePlayerChange(clickedCell, clickedCellIndex) {
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.innerHTML = currentPlayer;
+            clickedCell.classList.remove('text-blue-600', 'text-red-600');
+            clickedCell.classList.add(currentPlayer === 'X' ? 'text-blue-600' : 'text-red-600');
+            clickedCell.classList.add('disabled');
+        }
+        function handleResultValidation() {
+            let roundWon = false;
+            let winningConditionIndex = -1;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = board[winCondition[0]];
+                let b = board[winCondition[1]];
+                let c = board[winCondition[2]];
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winningConditionIndex = i;
+                    break;
+                }
+            }
+            if (roundWon) {
+                gameStatus.innerHTML = winningMessage();
+                gameActive = false;
+                cells.forEach(cell => cell.classList.add('disabled'));
+                winningLine.classList.remove('hidden');
+                winningLine.classList.add(`win-${winningConditions[winningConditionIndex].join('')}`);
+                setTimeout(handleResetGame, 5000);
+                return;
+            }
+            let roundDraw = !board.includes('');
+            if (roundDraw) {
+                gameStatus.innerHTML = drawMessage();
+                gameActive = false;
+                cells.forEach(cell => cell.classList.add('disabled'));
+                return;
+            }
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            gameStatus.innerHTML = currentPlayerTurn();
+        }
+        function handleResetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            gameStatus.innerHTML = currentPlayerTurn();
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+                cell.classList.remove('text-blue-600', 'text-red-600', 'disabled');
+            });
+            winningLine.classList.add('hidden');
+            winningConditions.forEach(condition => {
+                winningLine.classList.remove(`win-${condition.join('')}`);
+            });
+        }
+        initializeGame();
+    </script>
+</body>
+</html>
